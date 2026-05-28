@@ -77,17 +77,24 @@ function Nav() {
         }}>
 
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #2d4a2d 0%, #8cb88c 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 2C5.5 2 3.5 4 3.5 6.5C3.5 9 6 12 8 14C10 12 12.5 9 12.5 6.5C12.5 4 10.5 2 8 2Z" fill="white" opacity="0.9"/>
-              <circle cx="8" cy="6.5" r="1.5" fill="white" opacity="0.5"/>
-            </svg>
-          </div>
-          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 18 : 22, fontWeight: 700, color: "#1a2e1a", letterSpacing: "0.04em" }}>
-            Healthy Kitchen
-          </span>
-        </div>
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  }}
+>
+  <img
+    src="/logo_png.png"
+    alt="Healthy Kitchen"
+    style={{
+      height: isMobile ? 42 : 52,
+      width: "auto",
+      objectFit: "contain",
+      display: "block",
+    }}
+  />
+</div>
 
         {/* Desktop links */}
         {!isMobile && (
@@ -720,10 +727,25 @@ function Footer() {
   return (
     <footer style={{ padding: isMobile ? "48px 20px" : "60px 56px", background: "#1a2e1a", borderTop: "1px solid rgba(140,184,140,0.1)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 28 : 0 }}>
-        <div>
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 700, color: "#c8d8b0", letterSpacing: "0.04em" }}>Healthy Kitchen</div>
-          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "rgba(240,235,224,0.4)", marginTop: 5 }}>The art of intentional nourishment.</div>
-        </div>
+              <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  }}
+>
+  <img
+    src="/logo-footer2.png"
+    alt="Healthy Kitchen"
+    style={{
+      height: isMobile ? 42 : 52,
+      width: "auto",
+      objectFit: "contain",
+      display: "block",
+    }}
+  />
+</div>
+     
         <div style={{ display: "flex", gap: isMobile ? 24 : 36, flexWrap: "wrap" }}>
           {["Instagram", "Journal", "Contact"].map(link => (
             <a key={link} href="#" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "rgba(240,235,224,0.5)", textDecoration: "none", letterSpacing: "0.07em", textTransform: "uppercase", transition: "color 0.2s" }}
