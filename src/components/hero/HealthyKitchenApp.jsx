@@ -100,7 +100,7 @@ function Nav() {
         {!isMobile && (
           <div style={{ display: "flex", gap: 36 }}>
             {[["Menu", "#menu"], ["Build Meal", "#build-meal"], ["My Plan", "#calorie-planner"]].map(([label, href]) => (
-              <a key={label} href={href} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 20, fontWeight: 500, color: "#4a5040", textDecoration: "none", letterSpacing: "0.05em", textTransform: "uppercase", transition: "color 0.2s" }}
+              <a key={label} href={href} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 18, fontWeight: 500, color: "#4a5040", textDecoration: "none", letterSpacing: "0.05em", textTransform: "uppercase", transition: "color 0.2s" }}
                 onMouseEnter={e => e.target.style.color = "#2d4a2d"}
                 onMouseLeave={e => e.target.style.color = "#4a5040"}>{label}</a>
             ))}
@@ -110,7 +110,7 @@ function Nav() {
         {/* Desktop CTA */}
         {!isMobile && (
           <div style={{ display: "flex", gap: 10 }}>
-            <button style={{ padding: "10px 22px", borderRadius: 100, border: "1px solid rgba(45,74,45,0.28)", background: "transparent", fontFamily: "'DM Sans', sans-serif", fontSize: 20, fontWeight: 500, color: "#2d4a2d", cursor: "pointer" }}>Sign In</button>
+            <button style={{ padding: "10px 22px", borderRadius: 100, border: "1px solid rgba(45,74,45,0.28)", background: "transparent", fontFamily: "'DM Sans', sans-serif", fontSize: 18, fontWeight: 500, color: "#2d4a2d", cursor: "pointer" }}>Sign In</button>
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{ padding: "10px 22px", borderRadius: 100, border: "none", background: "#1a2e1a", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#f0ebe0", cursor: "pointer" }}>Get Started</motion.button>
           </div>
         )}
