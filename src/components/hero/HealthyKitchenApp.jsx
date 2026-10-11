@@ -1,275 +1,17 @@
-import { useState, useEffect, useRef, createContext, useContext } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
-
-/* ══════════════════════════════════════════════════
-   TRANSLATIONS
-══════════════════════════════════════════════════ */
-const TRANSLATIONS = {
-  fr: {
-    dir: "ltr",
-    nav: {
-      menu: "Menu", build: "Composer", plan: "Mon Plan",
-      signIn: "Connexion", getStarted: "Commencer",
-    },
-    badge: "Expérience Bien-Être Premium",
-    heroH1: ["Nourrir", "votre", "Nature."],
-    heroSub: "Un sanctuaire de saveurs et de vitalité. Chaque plat cuisiné avec intention — où l'art culinaire rencontre le bien-être holistique.",
-    exploreBtn: "Explorer le Menu",
-    buildBtn: "Composer un Repas",
-    stats: [["12K+","Repas créés"],["98%","Satisfaction"],["24/7","Suivi Nutrition"]],
-    dishCardName: "Bol Vert Énergie",
-    dishCardSub: "Saisonnier · Bio · Choix du Chef",
-    energyScore: "Score Énergie",
-    menuLabel: "Sélection Curatée",
-    menuH2: ["Plats", "Vedettes"],
-    fullMenu: "Menu Complet →",
-    addToMeal: "Ajouter",
-    menuDishes: [
-      { title:"Salade Verdure", sub:"Jeunes pousses, agrumes, microherbes", tag:"Saisonnier" },
-      { title:"Bol Protéiné", sub:"Poulet grillé, céréales anciennes, tahini", tag:"Choix du Chef" },
-      { title:"Élixir Forêt", sub:"Pressé à froid, adaptogènes, enzymes", tag:"Nouveau" },
-    ],
-    builderLabel: "Nutrition Intelligente",
-    builderH2: ["Composez Votre", "Rituel"],
-    builderSub: "Sélectionnez vos ingrédients. Notre IA Nutrition assemble votre équilibre macro parfait en temps réel.",
-    aiTitle: "IA Nutrition", live: "En direct",
-    macroLabels: ["Calories","Protéines","Glucides","Lipides"],
-    priceLabel: "Prix",
-    totalPriceLabel: "Total",
-    currencySymbol: "DT",
-    energyScoreLabel: "Score Énergie Quotidien",
-    builderEmpty: "Sélectionnez des ingrédients pour commencer",
-    builderOrder: n => `Commander mon Repas — ${n} article${n!==1?"s":""}`,
-    ingredients: [
-      { name:"Poulet Bio", detail:"Élevage plein air · 31g protéines/100g" },
-      { name:"Avocat Mûr", detail:"Graisses mono-insaturées · Vitamine E" },
-      { name:"Quinoa Heirloom", detail:"Protéine complète · Riche en fibres" },
-      { name:"Saumon Sauvage", detail:"Oméga-3 · Bon pour le cœur" },
-      { name:"Patate Douce", detail:"Bêta-carotène · Glucides complexes" },
-      { name:"Épinards Tendres", detail:"Fer · Folate · Antioxydants" },
-    ],
-    plannerLabel: "Votre Plan Quotidien",
-    plannerH2: ["Dites-nous Votre Objectif.", "On Compose le Menu."],
-    plannerSub: "Définissez votre apport calorique et votre objectif bien-être — notre cuisine sélectionne la combinaison parfaite de plats rien que pour vous.",
-    sliderLabel: "Objectif Calorique Quotidien",
-    adjustedLabel: "Objectif ajusté", perMealLabel: "Par repas",
-    goalLabel: "Objectif Bien-Être",
-    mealsLabel: "Repas par Jour",
-    generateBtn: "Générer Mon Plan de Repas ↓",
-    planResultLabel: "Votre Plan Personnalisé",
-    totalPlannedLabel: "Total planifié",
-    underTarget: "kcal sous l'objectif", overTarget: "kcal au-dessus",
-    mealCard: i => `Repas ${i+1}`,
-    addOrder: "Ajouter à la Commande",
-    macrosLabel: "Macros de la Journée",
-    macroUnits: ["protéines","glucides","lipides"],
-    orderFull: "Commander le Plan Complet",
-    goals: [
-      { label:"Perdre du Poids", mult:0.80, desc:"Léger déficit calorique" },
-      { label:"Maintenir", mult:1.0, desc:"Équilibre durable" },
-      { label:"Prendre de la Masse", mult:1.15, desc:"Surplus pour la croissance" },
-    ],
-    plannerDishes: [
-      { name:"Salade Verdure", tag:"Léger" },
-      { name:"Bol Protéiné", tag:"Riche Protéines" },
-      { name:"Smoothie Élixir Forêt", tag:"Faible Cal." },
-      { name:"Bol Vert Énergie", tag:"Équilibré" },
-      { name:"Assiette Détox Agrumes", tag:"Léger" },
-      { name:"Bol Oméga Saumon", tag:"Riche Protéines" },
-      { name:"Assiette Quinoa", tag:"Équilibré" },
-      { name:"Bol Avocat Nourrissant", tag:"Céto-Friendly" },
-    ],
-    authLabel: "Rejoignez la Communauté",
-    authH2: ["Commencez Votre", "Voyage Bien-Être"],
-    loginTitle: "Bon Retour",
-    emailPh: "Email", passwordPh: "Mot de passe",
-    loginBtn: "Entrer dans la Cuisine",
-    signupTitle: "Nouveau Départ",
-    fullNamePh: "Nom complet",
-    signupBtn: "Commencer Mon Voyage",
-    footerTagline: "L'art d'une nourriture intentionnelle.",
-    footerLinks: ["Instagram","Journal","Contact"],
-    copyright: "© 2026 Healthy Kitchen",
-  },
-  en: {
-    dir: "ltr",
-    nav: {
-      menu: "Menu", build: "Build Meal", plan: "My Plan",
-      signIn: "Sign In", getStarted: "Get Started",
-    },
-    badge: "Premium Wellness Experience",
-    heroH1: ["Nourish","your","Nature."],
-    heroSub: "A sanctuary of flavour and vitality. Every dish curated with intention — where culinary artistry meets holistic wellness.",
-    exploreBtn: "Explore Menu",
-    buildBtn: "Build a Meal",
-    stats: [["12K+","Meals crafted"],["98%","Satisfaction"],["24/7","Nutrition AI"]],
-    dishCardName: "Green Power Bowl",
-    dishCardSub: "Seasonal · Organic · Chef's Pick",
-    energyScore: "Energy Score",
-    menuLabel: "Curated Selection",
-    menuH2: ["Featured","Dishes"],
-    fullMenu: "Full Menu →",
-    addToMeal: "Add to Meal",
-    menuDishes: [
-      { title:"Verdure Salad", sub:"Heirloom greens, citrus, microherbs", tag:"Seasonal" },
-      { title:"Protein Harvest", sub:"Grilled chicken, ancient grain, tahini", tag:"Chef's Pick" },
-      { title:"Forest Elixir", sub:"Cold-pressed, adaptogens, enzymes", tag:"New" },
-    ],
-    builderLabel: "Smart Nutrition",
-    builderH2: ["Build Your","Own Ritual"],
-    builderSub: "Select your ingredients. Our Nutrition AI assembles your perfect macro balance in real time.",
-    aiTitle: "Nutrition AI", live: "Live",
-    macroLabels: ["Calories","Protein","Carbs","Fat"],
-    priceLabel: "Price",
-    totalPriceLabel: "Total",
-    currencySymbol: "DT",
-    energyScoreLabel: "Daily Energy Score",
-    builderEmpty: "Select ingredients to begin",
-    builderOrder: n => `Order My Meal — ${n} item${n!==1?"s":""}`,
-    ingredients: [
-      { name:"Organic Chicken", detail:"Free-range · 31g protein per 100g" },
-      { name:"Ripe Avocado", detail:"Monounsaturated fats · Vitamin E" },
-      { name:"Heirloom Quinoa", detail:"Complete protein · Fibre-rich" },
-      { name:"Wild Salmon", detail:"Omega-3 · Heart-healthy" },
-      { name:"Sweet Potato", detail:"Beta-carotene · Complex carbs" },
-      { name:"Baby Spinach", detail:"Iron · Folate · Antioxidants" },
-    ],
-    plannerLabel: "Your Daily Plan",
-    plannerH2: ["Tell Us Your Goal.","We'll Build the Menu."],
-    plannerSub: "Set your daily calorie target and wellness goal — our kitchen handpicks the perfect combination of dishes just for you.",
-    sliderLabel: "Daily Calorie Target",
-    adjustedLabel: "Adjusted target", perMealLabel: "Per meal",
-    goalLabel: "Wellness Goal",
-    mealsLabel: "Meals Per Day",
-    generateBtn: "Generate My Meal Plan ↓",
-    planResultLabel: "Your Personalised Plan",
-    totalPlannedLabel: "Total planned",
-    underTarget: "kcal under target", overTarget: "kcal over target",
-    mealCard: i => `Meal ${i+1}`,
-    addOrder: "Add to Order",
-    macrosLabel: "Full Day Macros",
-    macroUnits: ["protein","carbs","fat"],
-    orderFull: "Order Full Day Plan",
-    goals: [
-      { label:"Lose Weight", mult:0.80, desc:"Gentle calorie deficit" },
-      { label:"Maintain", mult:1.0, desc:"Sustain your balance" },
-      { label:"Build Muscle", mult:1.15, desc:"Fuel your growth" },
-    ],
-    plannerDishes: [
-      { name:"Verdure Salad", tag:"Light" },
-      { name:"Protein Harvest Bowl", tag:"High Protein" },
-      { name:"Forest Elixir Smoothie", tag:"Low Cal" },
-      { name:"Green Power Bowl", tag:"Balanced" },
-      { name:"Citrus Detox Plate", tag:"Light" },
-      { name:"Salmon Omega Bowl", tag:"High Protein" },
-      { name:"Quinoa Harvest Plate", tag:"Balanced" },
-      { name:"Avocado Nourish Bowl", tag:"Keto-Friendly" },
-    ],
-    authLabel: "Join the Community",
-    authH2: ["Begin Your","Wellness Journey"],
-    loginTitle: "Welcome Back",
-    emailPh: "Email", passwordPh: "Password",
-    loginBtn: "Enter Kitchen",
-    signupTitle: "Start Fresh",
-    fullNamePh: "Full Name",
-    signupBtn: "Begin My Journey",
-    footerTagline: "The art of intentional nourishment.",
-    footerLinks: ["Instagram","Journal","Contact"],
-    copyright: "© 2026 Healthy Kitchen",
-  },
-  ar: {
-    dir: "rtl",
-    nav: {
-      menu: "القائمة", build: "تكوين وجبة", plan: "خطتي",
-      signIn: "تسجيل الدخول", getStarted: "ابدأ الآن",
-    },
-    badge: "تجربة صحية متميزة",
-    heroH1: ["غذِّ","طبيعتك","بحب."],
-    heroSub: "ملاذ للنكهة والحيوية. كل طبق مُعَدّ بعناية — حيث يلتقي الفن الطهوي بالعافية الشاملة.",
-    exploreBtn: "استعرض القائمة",
-    buildBtn: "كوّن وجبتك",
-    stats: [["12K+","وجبة مُعَدّة"],["98%","رضا العملاء"],["24/7","تتبع التغذية"]],
-    dishCardName: "طبق الطاقة الخضراء",
-    dishCardSub: "موسمي · عضوي · اختيار الشيف",
-    energyScore: "نقاط الطاقة",
-    menuLabel: "تشكيلة مختارة",
-    menuH2: ["أطباقنا","المميزة"],
-    fullMenu: "← القائمة الكاملة",
-    addToMeal: "أضف للوجبة",
-    menuDishes: [
-      { title:"سلطة الخضار", sub:"خضار طازجة، حمضيات، أعشاب دقيقة", tag:"موسمي" },
-      { title:"طبق البروتين", sub:"دجاج مشوي، حبوب قديمة، طحينة", tag:"اختيار الشيف" },
-      { title:"إكسير الغابة", sub:"عصير بارد، مكيفات، إنزيمات", tag:"جديد" },
-    ],
-    builderLabel: "تغذية ذكية",
-    builderH2: ["كوّن","طقوسك الخاصة"],
-    builderSub: "اختر مكوناتك. يقوم الذكاء الاصطناعي للتغذية بتجميع توازن المكروغذائيات المثالي لك في الوقت الفعلي.",
-    aiTitle: "ذكاء التغذية", live: "مباشر",
-    macroLabels: ["السعرات","البروتين","الكربوهيدرات","الدهون"],
-    priceLabel: "السعر",
-    totalPriceLabel: "الإجمالي",
-    currencySymbol: "د.ت",
-    energyScoreLabel: "مؤشر الطاقة اليومي",
-    builderEmpty: "اختر المكونات للبدء",
-    builderOrder: n => `اطلب وجبتي — ${n} ${n===1?"عنصر":"عناصر"}`,
-    ingredients: [
-      { name:"دجاج عضوي", detail:"تربية حرة · 31 غ بروتين/100 غ" },
-      { name:"أفوكادو ناضج", detail:"دهون أحادية · فيتامين E" },
-      { name:"كينوا أصيلة", detail:"بروتين كامل · غنية بالألياف" },
-      { name:"سلمون بري", detail:"أوميغا-3 · صحة القلب" },
-      { name:"بطاطا حلوة", detail:"بيتا كاروتين · كربوهيدرات معقدة" },
-      { name:"سبانخ طازجة", detail:"حديد · حمض الفوليك · مضادات أكسدة" },
-    ],
-    plannerLabel: "خطتك اليومية",
-    plannerH2: ["أخبرنا بهدفك.","سنبني قائمتك."],
-    plannerSub: "حدد هدفك اليومي من السعرات ونوع هدفك الصحي — ستختار مطبخنا التوليفة المثالية من الأطباق خصيصًا لك.",
-    sliderLabel: "الهدف اليومي من السعرات",
-    adjustedLabel: "الهدف المعدَّل", perMealLabel: "لكل وجبة",
-    goalLabel: "هدفك الصحي",
-    mealsLabel: "عدد الوجبات يومياً",
-    generateBtn: "↓ توليد خطة وجباتي",
-    planResultLabel: "خطتك الشخصية",
-    totalPlannedLabel: "إجمالي المخطط",
-    underTarget: "سعرة دون الهدف", overTarget: "سعرة فوق الهدف",
-    mealCard: i => `وجبة ${i+1}`,
-    addOrder: "أضف للطلب",
-    macrosLabel: "مكروغذائيات اليوم",
-    macroUnits: ["بروتين","كربوهيدرات","دهون"],
-    orderFull: "اطلب خطة اليوم الكاملة",
-    goals: [
-      { label:"خسارة الوزن", mult:0.80, desc:"عجز خفيف في السعرات" },
-      { label:"الحفاظ على الوزن", mult:1.0, desc:"استدامة التوازن" },
-      { label:"بناء العضلات", mult:1.15, desc:"فائض لدعم النمو" },
-    ],
-    plannerDishes: [
-      { name:"سلطة الخضار", tag:"خفيف" },
-      { name:"bol البروتين", tag:"غني بالبروتين" },
-      { name:"سموذي إكسير الغابة", tag:"منخفض السعرات" },
-      { name:"طبق الطاقة الخضراء", tag:"متوازن" },
-      { name:"طبق ديتوكس الحمضيات", tag:"خفيف" },
-      { name:"bol سلمون أوميغا", tag:"غني بالبروتين" },
-      { name:"طبق كينوا الحصاد", tag:"متوازن" },
-      { name:"bol الأفوكادو المغذي", tag:"كيتو" },
-    ],
-    authLabel: "انضم إلى المجتمع",
-    authH2: ["ابدأ رحلتك","نحو العافية"],
-    loginTitle: "أهلاً بعودتك",
-    emailPh: "البريد الإلكتروني", passwordPh: "كلمة المرور",
-    loginBtn: "ادخل المطبخ",
-    signupTitle: "بداية جديدة",
-    fullNamePh: "الاسم الكامل",
-    signupBtn: "ابدأ رحلتي",
-    footerTagline: "فن التغذية المقصودة.",
-    footerLinks: ["إنستغرام","المدوّنة","تواصل معنا"],
-    copyright: "© 2026 Healthy Kitchen",
-  },
-};
-
-/* ══════════════════════════════════════════════════
-   CONTEXT
-══════════════════════════════════════════════════ */
-const LangCtx = createContext({ lang:"fr", t:TRANSLATIONS.fr, setLang:()=>{} });
-const useLang = () => useContext(LangCtx);
+import { ShoppingBag, User } from "lucide-react";
+import { useLang, useT, localized } from "@/i18n/LangContext";
+import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
+import { useCatalogMeals, useCatalogIngredients } from "@/hooks/useCatalog";
+import { useNutritionCalculator } from "@/hooks/useNutritionCalculator";
+import { mealToCartItem, customBowlToCartItem } from "@/utils/cart";
+import { formatMoney, formatNutrient } from "@/utils/format";
+import { percentOfDailyReference } from "@shared/nutrition";
+import AuthForms from "@/components/auth/AuthForms";
+import { useToast } from "@/components/ui/Feedback";
 
 /* ══════════════════════════════════════════════════
    HOOKS
@@ -297,7 +39,7 @@ function Reveal({children,delay=0,y=24}) {
   );
 }
 
-function Grain() {
+export function Grain() {
   return (
     <div style={{
       position:"fixed",inset:0,pointerEvents:"none",zIndex:100,opacity:0.028,
@@ -334,21 +76,46 @@ function LangSwitcher() {
 /* ══════════════════════════════════════════════════
    NAV
 ══════════════════════════════════════════════════ */
-function Nav() {
-  const {t}=useLang();
+export function Nav() {
+  const {t,dir}=useLang();
+  const tt=useT();
   const {isMobile}=useBreakpoint();
+  const {user,hasStaffArea,hasAdminArea}=useAuth();
+  const cart=useCart();
   const [scrolled,setScrolled]=useState(false);
   const [open,setOpen]=useState(false);
-  const isRTL=t.dir==="rtl";
+  const isRTL=dir==="rtl";
   const ff=isRTL?"'Noto Sans Arabic',sans-serif":"'DM Sans',sans-serif";
 
   useEffect(()=>{
     const fn=()=>setScrolled(window.scrollY>40);
+    fn();
     window.addEventListener("scroll",fn);
     return ()=>window.removeEventListener("scroll",fn);
   },[]);
 
-  const links=[[t.nav.menu,"#menu"],[t.nav.build,"#build-meal"],[t.nav.plan,"#calorie-planner"]];
+  // Menu opens the full menu page; builder/planner are sections of the home page.
+  const links=[[t.nav.menu,"/menu"],[t.nav.build,"/#build-meal"],[t.nav.plan,"/#calorie-planner"]];
+  const accountHref=hasAdminArea?"/admin":hasStaffArea?"/staff":"/account";
+  const accountLabel=user?(hasAdminArea||hasStaffArea?tt("Dashboard"):tt("My account")):t.nav.signIn;
+
+  const cartButton=(
+    <motion.button whileTap={{scale:0.9}} onClick={()=>cart.setOpen(true)} aria-label={tt("Open cart")}
+      style={{position:"relative",width:44,height:44,borderRadius:100,border:"1px solid rgba(45,74,45,0.2)",
+        background:"rgba(255,255,255,0.5)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#1a2e1a"}}>
+      <ShoppingBag size={19}/>
+      <AnimatePresence>
+        {cart.count>0&&(
+          <motion.span key={cart.count} initial={{scale:0}} animate={{scale:1}} exit={{scale:0}}
+            transition={{type:"spring",stiffness:500,damping:20}}
+            style={{position:"absolute",top:-4,[isRTL?"left":"right"]:-4,minWidth:20,height:20,padding:"0 5px",borderRadius:100,
+              background:"#8cb88c",color:"#1a2e1a",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>
+            {cart.count}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
+  );
 
   return (
     <>
@@ -364,22 +131,24 @@ function Nav() {
           backdropFilter:scrolled||open?"blur(24px)":"none",
           borderBottom:scrolled||open?"1px solid rgba(140,184,140,0.18)":"none",
           transition:"all 0.4s ease",
-          direction:t.dir,
+          direction:dir,
         }}>
 
         {/* Logo */}
-        <img src="/logo_png.png" alt="Healthy Kitchen"
-          style={{height:isMobile?40:50,width:"auto",objectFit:"contain",display:"block"}}/>
+        <Link to="/" aria-label="Healthy Kitchen">
+          <img src="/logo_png.png" alt="Healthy Kitchen"
+            style={{height:isMobile?40:50,width:"auto",objectFit:"contain",display:"block"}}/>
+        </Link>
 
         {/* Desktop links */}
         {!isMobile && (
           <div style={{display:"flex",gap:32}}>
             {links.map(([label,href])=>(
-              <a key={label} href={href}
+              <Link key={label} to={href}
                 style={{fontFamily:ff,fontSize:14,fontWeight:500,color:"#4a5040",textDecoration:"none",
                   letterSpacing:isRTL?0:"0.04em",textTransform:isRTL?"none":"uppercase",transition:"color 0.2s"}}
                 onMouseEnter={e=>e.target.style.color="#2d4a2d"}
-                onMouseLeave={e=>e.target.style.color="#4a5040"}>{label}</a>
+                onMouseLeave={e=>e.target.style.color="#4a5040"}>{label}</Link>
             ))}
           </div>
         )}
@@ -388,29 +157,27 @@ function Nav() {
         {!isMobile && (
           <div style={{display:"flex",gap:12,alignItems:"center"}}>
             <LangSwitcher/>
-            <button style={{padding:"9px 20px",borderRadius:100,border:"1px solid rgba(45,74,45,0.28)",
-              background:"transparent",fontFamily:ff,fontSize:13,fontWeight:500,color:"#2d4a2d",cursor:"pointer"}}>
-              {t.nav.signIn}
-            </button>
-            <motion.button whileHover={{scale:1.04}} whileTap={{scale:0.97}}
-              style={{padding:"9px 20px",borderRadius:100,border:"none",background:"#1a2e1a",
-                fontFamily:ff,fontSize:13,fontWeight:600,color:"#f0ebe0",cursor:"pointer"}}>
-              {t.nav.getStarted}
-            </motion.button>
+            <Link to={user?accountHref:"/login"}
+              style={{padding:"9px 18px",borderRadius:100,border:"1px solid rgba(45,74,45,0.28)",display:"inline-flex",alignItems:"center",gap:6,
+                background:"transparent",fontFamily:ff,fontSize:13,fontWeight:500,color:"#2d4a2d",textDecoration:"none"}}>
+              {user&&<User size={15}/>}{accountLabel}
+            </Link>
+            {cartButton}
           </div>
         )}
 
-        {/* Mobile: switcher + hamburger */}
+        {/* Mobile: switcher + cart + hamburger */}
         {isMobile && (
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
             <LangSwitcher/>
-            <button onClick={()=>setOpen(o=>!o)}
-              style={{background:"none",border:"none",cursor:"pointer",padding:8,display:"flex",flexDirection:"column",gap:5}}>
-              <motion.span animate={{rotate:open?45:0,y:open?9:0}}
+            {cartButton}
+            <button onClick={()=>setOpen(o=>!o)} aria-label={tt("Menu")} aria-expanded={open}
+              style={{background:"none",border:"none",cursor:"pointer",padding:11,display:"flex",flexDirection:"column",gap:5}}>
+              <motion.span animate={{rotate:open?45:0,y:open?7:0}}
                 style={{display:"block",width:22,height:2,background:"#1a2e1a",borderRadius:2,transformOrigin:"center"}}/>
               <motion.span animate={{opacity:open?0:1}}
                 style={{display:"block",width:22,height:2,background:"#1a2e1a",borderRadius:2}}/>
-              <motion.span animate={{rotate:open?-45:0,y:open?-9:0}}
+              <motion.span animate={{rotate:open?-45:0,y:open?-7:0}}
                 style={{display:"block",width:22,height:2,background:"#1a2e1a",borderRadius:2,transformOrigin:"center"}}/>
             </button>
           </div>
@@ -425,24 +192,26 @@ function Nav() {
             style={{position:"fixed",top:64,left:0,right:0,zIndex:190,
               background:"rgba(245,240,232,0.98)",backdropFilter:"blur(24px)",
               borderBottom:"1px solid rgba(140,184,140,0.18)",
-              padding:"20px 20px 24px",display:"flex",flexDirection:"column",direction:t.dir}}>
+              padding:"20px 20px 24px",display:"flex",flexDirection:"column",direction:dir}}>
             {links.map(([label,href])=>(
-              <a key={label} href={href} onClick={()=>setOpen(false)}
+              <Link key={label} to={href} onClick={()=>setOpen(false)}
                 style={{fontFamily:ff,fontSize:16,fontWeight:600,color:"#1a2e1a",textDecoration:"none",
                   padding:"13px 0",borderBottom:"1px solid rgba(140,184,140,0.12)",
                   textAlign:isRTL?"right":"left"}}>
                 {label}
-              </a>
+              </Link>
             ))}
             <div style={{display:"flex",gap:10,marginTop:18}}>
-              <button style={{flex:1,padding:"12px",borderRadius:100,border:"1px solid rgba(45,74,45,0.28)",
-                background:"transparent",fontFamily:ff,fontSize:14,color:"#2d4a2d",cursor:"pointer"}}>
-                {t.nav.signIn}
-              </button>
-              <button style={{flex:1,padding:"12px",borderRadius:100,border:"none",background:"#1a2e1a",
-                fontFamily:ff,fontSize:14,fontWeight:600,color:"#f0ebe0",cursor:"pointer"}}>
+              <Link to={user?accountHref:"/login"} onClick={()=>setOpen(false)}
+                style={{flex:1,padding:"12px",borderRadius:100,border:"1px solid rgba(45,74,45,0.28)",textAlign:"center",textDecoration:"none",
+                  background:"transparent",fontFamily:ff,fontSize:14,color:"#2d4a2d"}}>
+                {accountLabel}
+              </Link>
+              <Link to="/menu" onClick={()=>setOpen(false)}
+                style={{flex:1,padding:"12px",borderRadius:100,border:"none",background:"#1a2e1a",textAlign:"center",textDecoration:"none",
+                  fontFamily:ff,fontSize:14,fontWeight:600,color:"#f0ebe0"}}>
                 {t.nav.getStarted}
-              </button>
+              </Link>
             </div>
           </motion.div>
         )}
@@ -455,7 +224,11 @@ function Nav() {
    HERO
 ══════════════════════════════════════════════════ */
 function Hero() {
-  const {t}=useLang();
+  const {t,lang}=useLang();
+  const navigate=useNavigate();
+  const {data:meals}=useCatalogMeals();
+  // Hero card shows a real featured dish (nutrition calculated from its recipe).
+  const featured=(meals??[]).find(m=>m.isFeatured&&m.nutrition)??(meals??[])[0];
   const {isMobile,isTablet}=useBreakpoint();
   const {scrollY}=useScroll();
   const y=useTransform(scrollY,[0,600],[0,isMobile?-40:-120]);
@@ -515,14 +288,14 @@ function Hero() {
             </motion.p>
 
             <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.7,delay:0.65}}
-              style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:isRTL?"flex-end":"flex-start"}}>
-              <motion.button whileHover={{scale:1.04,background:"#2d4a2d"}} whileTap={{scale:0.97}}
+              style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"flex-start"}}>
+              <motion.button onClick={()=>navigate("/menu")} whileHover={{scale:1.04,background:"#2d4a2d"}} whileTap={{scale:0.97}}
                 style={{padding:isMobile?"14px 26px":"17px 36px",borderRadius:100,border:"none",
                   background:"#1a2e1a",fontFamily:ff,fontSize:isMobile?14:15,fontWeight:600,
                   color:"#f0ebe0",cursor:"pointer",transition:"background 0.2s"}}>
                 {t.exploreBtn}
               </motion.button>
-              <motion.button whileHover={{scale:1.04}} whileTap={{scale:0.97}}
+              <motion.button onClick={()=>document.getElementById("build-meal")?.scrollIntoView({behavior:"smooth"})} whileHover={{scale:1.04}} whileTap={{scale:0.97}}
                 style={{padding:isMobile?"14px 26px":"17px 36px",borderRadius:100,
                   border:"1px solid rgba(45,74,45,0.3)",background:"transparent",
                   fontFamily:ff,fontSize:isMobile?14:15,fontWeight:500,color:"#2d4a2d",cursor:"pointer"}}>
@@ -532,7 +305,7 @@ function Hero() {
 
             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.8,delay:0.9}}
               style={{display:"flex",gap:isMobile?24:44,marginTop:isMobile?40:56,
-                justifyContent:isRTL?"flex-end":"flex-start"}} id="stats">
+                justifyContent:"flex-start"}} id="stats">
               {t.stats.map(([num,label])=>(
                 <div key={num} style={{textAlign:isRTL?"right":"left"}}>
                   <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?34:44,
@@ -551,40 +324,41 @@ function Hero() {
                 borderRadius:"36px",border:"1px solid rgba(140,184,140,0.22)",pointerEvents:"none"}}/>
               <div style={{borderRadius:28,overflow:"hidden",background:"#e8e4dc",position:"relative",
                 boxShadow:"0 32px 70px rgba(26,46,26,0.12)"}}>
-                <img src="https://images.unsplash.com/photo-1546793665-c74683f339c1?q=80&w=1200&auto=format&fit=crop"
-                  style={{width:"100%",height:isTablet?360:490,objectFit:"cover",display:"block"}} alt="Hero dish"/>
-                <motion.div initial={{y:20,opacity:0}} animate={{y:0,opacity:1}} transition={{delay:1.1,duration:0.8}}
-                  style={{position:"absolute",bottom:20,left:20,right:20,
+                <img src={featured?.imageUrl??"https://images.unsplash.com/photo-1546793665-c74683f339c1?q=80&w=1200&auto=format&fit=crop"}
+                  style={{width:"100%",height:isTablet?360:490,objectFit:"cover",display:"block"}} alt=""/>
+                {featured&&<motion.div initial={{y:20,opacity:0}} animate={{y:0,opacity:1}} transition={{delay:0.4,duration:0.8}}
+                  onClick={()=>navigate(`/menu?m=${featured.slug}`)}
+                  style={{position:"absolute",bottom:20,left:20,right:20,cursor:"pointer",
                     background:"rgba(245,240,232,0.9)",backdropFilter:"blur(20px)",
                     borderRadius:18,padding:"18px 22px",border:"1px solid rgba(255,255,255,0.6)",direction:t.dir}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,
-                    flexDirection:isRTL?"row-reverse":"row"}}>
+                    flexDirection:"row"}}>
                     <div>
-                      <div style={{fontFamily:serif,fontSize:20,fontWeight:700,color:"#1a2e1a"}}>{t.dishCardName}</div>
-                      <div style={{fontFamily:ff,fontSize:12,color:"#8a9080",marginTop:2}}>{t.dishCardSub}</div>
+                      <div style={{fontFamily:serif,fontSize:20,fontWeight:700,color:"#1a2e1a"}}>{localized(featured,"name",lang)}</div>
+                      <div style={{fontFamily:ff,fontSize:12,color:"#8a9080",marginTop:2}}>{localized(featured,"tag",lang)}</div>
                     </div>
-                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,fontWeight:700,color:"#2d4a2d"}}>520 kcal</div>
+                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,fontWeight:700,color:"#2d4a2d"}}>{formatNutrient(featured.nutrition.kcal,"kcal")} kcal</div>
                   </div>
-                  <div style={{display:"flex",gap:24,justifyContent:isRTL?"flex-end":"flex-start"}}>
-                    {[["Protein","42g"],["Carbs","31g"],["Fat","14g"]].map(([k,v])=>(
+                  <div style={{display:"flex",gap:24,justifyContent:"flex-start"}}>
+                    {[[t.macroLabels[1],featured.nutrition.protein],[t.macroLabels[2],featured.nutrition.carbs],[t.macroLabels[3],featured.nutrition.fat]].map(([k,v])=>(
                       <div key={k} style={{textAlign:isRTL?"right":"left"}}>
                         <div style={{fontFamily:ff,fontSize:11,color:"#8a9080",letterSpacing:"0.04em",textTransform:"uppercase"}}>{k}</div>
-                        <div style={{fontFamily:ff,fontSize:18,fontWeight:700,color:"#2d4a2d",marginTop:2}}>{v}</div>
+                        <div style={{fontFamily:ff,fontSize:18,fontWeight:700,color:"#2d4a2d",marginTop:2}}>{Math.round(v)}g</div>
                       </div>
                     ))}
                   </div>
-                </motion.div>
+                </motion.div>}
               </div>
-              <motion.div animate={{y:[-5,5,-5]}} transition={{duration:4,repeat:Infinity,ease:"easeInOut"}}
+              {featured&&<motion.div animate={{y:[-5,5,-5]}} transition={{duration:4,repeat:Infinity,ease:"easeInOut"}}
                 style={{position:"absolute",top:28,
                   [isRTL?"left":"right"]:-24,
                   background:"#f0ebe0",borderRadius:18,padding:"12px 18px",
                   boxShadow:"0 8px 24px rgba(26,46,26,0.1)",border:"1px solid rgba(140,184,140,0.3)",textAlign:"center"}}>
-                <div style={{fontFamily:ff,fontSize:11,color:"#8a9080",letterSpacing:"0.04em",textTransform:"uppercase"}}>{t.energyScore}</div>
-                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:32,fontWeight:700,color:"#1a2e1a",lineHeight:1,marginTop:2}}>
-                  92<span style={{fontSize:15,color:"#8cb88c"}}>%</span>
+                <div style={{fontFamily:ff,fontSize:11,color:"#8a9080",letterSpacing:"0.04em",textTransform:"uppercase"}}>{t.priceLabel}</div>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,fontWeight:700,color:"#1a2e1a",lineHeight:1,marginTop:2}}>
+                  {formatMoney(featured.priceMillimes,{symbol:""})}<span style={{fontSize:15,color:"#8cb88c"}}> {t.currencySymbol}</span>
                 </div>
-              </motion.div>
+              </motion.div>}
             </motion.div>
           )}
         </div>
@@ -596,22 +370,24 @@ function Hero() {
 /* ══════════════════════════════════════════════════
    MENU
 ══════════════════════════════════════════════════ */
-const DISH_IMAGES=[
-  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1505252585461-04db1eb84625?q=80&w=1200&auto=format&fit=crop",
-];
-const DISH_CALS=["410 kcal","530 kcal","290 kcal"];
-const DISH_PRICES=[18.5, 24.0, 12.0]; // DT
-
 function MenuSection() {
-  const {t}=useLang();
+  const {t,lang}=useLang();
+  const tt=useT();
+  const navigate=useNavigate();
+  const cart=useCart();
+  const toast=useToast();
+  const {data:meals,loading}=useCatalogMeals();
   const {isMobile,isTablet}=useBreakpoint();
   const isRTL=t.dir==="rtl";
   const ff=isRTL?"'Noto Sans Arabic',sans-serif":"'DM Sans',sans-serif";
   const serif=isRTL?"'Noto Sans Arabic',sans-serif":"'Cormorant Garamond',serif";
   const px=isMobile?"20px":isTablet?"32px":"56px";
   const cols=isMobile?"1fr":isTablet?"1fr 1fr":"repeat(3,1fr)";
+  // Live catalogue: featured dishes first (prices & kcal come from the server).
+  const dishes=useMemo(()=>{
+    const list=meals??[];
+    return [...list.filter(m=>m.isFeatured),...list.filter(m=>!m.isFeatured)].slice(0,3);
+  },[meals]);
 
   return (
     <section id="menu" style={{padding:`${isMobile?80:120}px ${px}`,background:"#f5f0e8",direction:t.dir}}>
@@ -620,7 +396,7 @@ function MenuSection() {
           <div style={{display:"flex",justifyContent:"space-between",
             alignItems:isMobile?"flex-start":"flex-end",
             marginBottom:isMobile?44:64,
-            flexDirection:isMobile?"column":isRTL?"row-reverse":"row",gap:isMobile?16:0}}>
+            flexDirection:isMobile?"column":"row",gap:isMobile?16:0}}>
             <div>
               <div style={{fontFamily:ff,fontSize:13,color:"#8cb88c",
                 letterSpacing:isRTL?0:"0.18em",textTransform:isRTL?"none":"uppercase",
@@ -631,57 +407,66 @@ function MenuSection() {
                 <span style={{fontStyle:isRTL?"normal":"italic",color:"#8cb88c"}}>{t.menuH2[1]}</span>
               </h2>
             </div>
-            <button style={{padding:"11px 24px",borderRadius:100,border:"1px solid rgba(45,74,45,0.25)",
+            <motion.button onClick={()=>navigate("/menu")} whileTap={{scale:0.97}}
+              style={{padding:"11px 24px",minHeight:44,borderRadius:100,border:"1px solid rgba(45,74,45,0.25)",
               background:"transparent",fontFamily:ff,fontSize:14,fontWeight:500,
               color:"#2d4a2d",cursor:"pointer",whiteSpace:"nowrap"}}>
               {t.fullMenu}
-            </button>
+            </motion.button>
           </div>
         </Reveal>
 
         <div style={{display:"grid",gridTemplateColumns:cols,gap:24}}>
-          {t.menuDishes.map((dish,i)=>(
-            <Reveal key={i} delay={i*0.1}>
+          {loading&&[0,1,2].map(i=>(
+            <motion.div key={i} animate={{opacity:[0.5,1,0.5]}} transition={{duration:1.4,repeat:Infinity}}
+              style={{height:isMobile?380:420,borderRadius:24,background:"#eae8e0"}}/>
+          ))}
+          {dishes.map((dish,i)=>{
+            const soldOut=dish.availability!=="available";
+            return (
+            <Reveal key={dish.id} delay={i*0.1}>
               <motion.div whileHover={{y:-8,boxShadow:"0 24px 56px rgba(26,46,26,0.13)"}}
                 transition={{duration:0.4}}
+                onClick={()=>navigate(`/menu?m=${dish.slug}`)}
                 style={{borderRadius:24,overflow:"hidden",background:"#eae8e0",
                   border:"1px solid rgba(140,184,140,0.15)",
                   boxShadow:"0 4px 20px rgba(26,46,26,0.06)",cursor:"pointer"}}>
                 <div style={{position:"relative",overflow:"hidden"}}>
                   <motion.img whileHover={{scale:1.05}} transition={{duration:0.6}}
-                    src={DISH_IMAGES[i]}
-                    style={{width:"100%",height:isMobile?210:250,objectFit:"cover",display:"block"}}
-                    alt={dish.title}/>
-                  <div style={{position:"absolute",top:14,[isRTL?"right":"left"]:14,padding:"5px 13px",
+                    src={dish.imageUrl}
+                    style={{width:"100%",height:isMobile?210:250,objectFit:"cover",display:"block",filter:soldOut?"grayscale(1)":"none"}}
+                    alt={localized(dish,"name",lang)}/>
+                  {localized(dish,"tag",lang)&&<div style={{position:"absolute",top:14,[isRTL?"right":"left"]:14,padding:"5px 13px",
                     borderRadius:100,background:"rgba(245,240,232,0.9)",backdropFilter:"blur(8px)",
                     fontFamily:ff,fontSize:12,fontWeight:600,color:"#2d4a2d"}}>
-                    {dish.tag}
-                  </div>
+                    {localized(dish,"tag",lang)}
+                  </div>}
                 </div>
                 <div style={{padding:isMobile?"18px 20px 22px":"22px 26px 26px",textAlign:isRTL?"right":"left"}}>
                   <h3 style={{fontFamily:serif,fontSize:isMobile?24:28,fontWeight:700,color:"#1a2e1a",marginBottom:6}}>
-                    {dish.title}
+                    {localized(dish,"name",lang)}
                   </h3>
-                  <p style={{fontFamily:ff,fontSize:14,color:"#8a9080",lineHeight:1.6,marginBottom:18}}>{dish.sub}</p>
+                  <p style={{fontFamily:ff,fontSize:14,color:"#8a9080",lineHeight:1.6,marginBottom:18}}>{localized(dish,"description",lang)}</p>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                    flexDirection:isRTL?"row-reverse":"row"}}>
+                    flexDirection:"row"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:2}}>
                       <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:24,fontWeight:700,color:"#1a2e1a"}}>
-                        {DISH_PRICES[i]} <span style={{fontSize:14,fontWeight:500,color:"#8a9080"}}>{t.currencySymbol}</span>
+                        {formatMoney(dish.priceMillimes,{symbol:""})} <span style={{fontSize:14,fontWeight:500,color:"#8a9080"}}>{t.currencySymbol}</span>
                       </span>
-                      <span style={{fontFamily:ff,fontSize:12,color:"#8a9080"}}>{DISH_CALS[i]}</span>
+                      <span style={{fontFamily:ff,fontSize:12,color:"#8a9080"}}>{formatNutrient(dish.nutrition.kcal,"kcal")} kcal · {Math.round(dish.nutrition.protein)}g {t.macroUnits[0]}</span>
                     </div>
-                    <motion.button whileHover={{scale:1.06,background:"#2d4a2d"}} whileTap={{scale:0.95}}
-                      style={{padding:"10px 20px",borderRadius:100,border:"none",background:"#1a2e1a",
-                        fontFamily:ff,fontSize:13,fontWeight:600,color:"#f0ebe0",cursor:"pointer",
-                        transition:"background 0.2s"}}>
-                      {t.addToMeal}
+                    <motion.button whileHover={soldOut?undefined:{scale:1.06,background:"#2d4a2d"}} whileTap={soldOut?undefined:{scale:0.95}}
+                      disabled={soldOut}
+                      onClick={(e)=>{e.stopPropagation();cart.add(mealToCartItem(dish),1,{openCart:false});toast(tt("{name} added to your order",{name:localized(dish,"name",lang)}));}}
+                      style={{padding:"10px 20px",minHeight:44,borderRadius:100,border:"none",background:"#1a2e1a",
+                        fontFamily:ff,fontSize:13,fontWeight:600,color:"#f0ebe0",cursor:soldOut?"not-allowed":"pointer",opacity:soldOut?0.45:1}}>
+                      {soldOut?tt("Sold out for now"):t.addToMeal}
                     </motion.button>
                   </div>
                 </div>
               </motion.div>
             </Reveal>
-          ))}
+          );})}
         </div>
       </div>
     </section>
@@ -691,23 +476,39 @@ function MenuSection() {
 /* ══════════════════════════════════════════════════
    MEAL BUILDER
 ══════════════════════════════════════════════════ */
-const ING_COLORS=["#c8d8b0","#b8d4a8","#d4c8a0","#c8b8a0","#d4b890","#b0c8a0"];
-const ING_CALS=[165,80,120,208,86,23];
-const ING_PRICES=[8.5,4.0,3.5,12.0,2.5,1.5]; // DT per portion
-
+/**
+ * "Build your own" — previously computed macros as fixed percentages of calories
+ * (protein = kcal × 0.26 g, …) with no portion weights. It now uses real ingredients
+ * (per-100 g values from the API) and the shared calculator; the server recomputes the
+ * same numbers when the order is placed.
+ */
 function MealBuilder() {
-  const {t}=useLang();
+  const {t,lang}=useLang();
+  const tt=useT();
+  const cart=useCart();
+  const {data:ingredients,loading}=useCatalogIngredients();
   const {isMobile,isTablet}=useBreakpoint();
-  const [selected,setSelected]=useState([]);
+  const [portions,setPortions]=useState({}); // ingredientId → portions (1–3)
   const isRTL=t.dir==="rtl";
   const ff=isRTL?"'Noto Sans Arabic',sans-serif":"'DM Sans',sans-serif";
   const serif=isRTL?"'Noto Sans Arabic',sans-serif":"'Cormorant Garamond',serif";
   const px=isMobile?"20px":isTablet?"32px":"56px";
-  const totalCal=selected.reduce((s,idx)=>s+ING_CALS[idx],0);
-  const totalPrice=selected.reduce((s,idx)=>s+ING_PRICES[idx],0);
-  const totalProt=Math.round(totalCal*0.26);
-  const totalCarbs=Math.round(totalCal*0.14);
-  const totalFat=Math.round(totalCal*0.06);
+
+  const picks=useMemo(()=>(ingredients??[]).filter(i=>portions[i.id]).map(i=>({ingredient:i,portions:portions[i.id]})),[ingredients,portions]);
+  const lines=useMemo(()=>picks.map(p=>({ingredient:p.ingredient,quantity:p.ingredient.portionQty*p.portions})),[picks]);
+  const calc=useNutritionCalculator(lines,1);
+  const n=calc.total;
+  const totalPrice=picks.reduce((s,p)=>s+p.ingredient.portionPriceMillimes*p.portions,0);
+  const dailyShare=Math.min(100,percentOfDailyReference(n.kcal,"kcal"));
+  const count=picks.reduce((s,p)=>s+p.portions,0);
+
+  const toggle=(ing)=>setPortions(p=>{const next={...p}; if(next[ing.id]) delete next[ing.id]; else next[ing.id]=1; return next;});
+  const step=(ing,delta)=>setPortions(p=>{const v=(p[ing.id]??0)+delta; const next={...p}; if(v<=0) delete next[ing.id]; else next[ing.id]=Math.min(3,v); return next;});
+  const order=()=>{
+    if(!picks.length) return;
+    cart.add(customBowlToCartItem(picks,n.kcal,lang),1);
+    setPortions({});
+  };
 
   return (
     <section id="build-meal" style={{padding:`${isMobile?80:120}px ${px}`,
@@ -735,46 +536,60 @@ function MealBuilder() {
           </Reveal>
 
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {t.ingredients.map((ing,i)=>{
-              const isSel=selected.includes(i);
+            {loading&&[0,1,2,3].map(i=>(
+              <motion.div key={i} animate={{opacity:[0.5,1,0.5]}} transition={{duration:1.4,repeat:Infinity}} style={{height:72,borderRadius:16,background:"rgba(245,240,232,0.7)"}}/>
+            ))}
+            {(ingredients??[]).map((ing,i)=>{
+              const qty=portions[ing.id]??0;
+              const isSel=qty>0;
+              const portionKcal=ing.nutrition.kcal*(ing.portionQty*(ing.baseUnit==="g"?1:ing.gramsPerUnit))/100;
               return (
-                <Reveal key={i} delay={i*0.06} y={16}>
+                <Reveal key={ing.id} delay={i*0.06} y={16}>
                   <motion.div
-                    onClick={()=>setSelected(p=>isSel?p.filter(x=>x!==i):[...p,i])}
-                    whileHover={{x:isRTL?-4:4}}
-                    style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                      padding:isMobile?"13px 15px":"17px 20px",borderRadius:16,
+                    role="button" tabIndex={ing.available?0:-1} aria-pressed={isSel}
+                    onClick={()=>ing.available&&toggle(ing)}
+                    onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&ing.available){e.preventDefault();toggle(ing);}}}
+                    whileHover={ing.available?{x:isRTL?-4:4}:undefined}
+                    style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+                      padding:isMobile?"13px 15px":"17px 20px",borderRadius:16,minHeight:64,
                       border:`1px solid ${isSel?"rgba(45,74,45,0.35)":"rgba(140,184,140,0.18)"}`,
                       background:isSel?"rgba(45,74,45,0.07)":"rgba(245,240,232,0.7)",
-                      cursor:"pointer",transition:"all 0.25s",
-                      flexDirection:isRTL?"row-reverse":"row"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:14,
-                      flexDirection:isRTL?"row-reverse":"row"}}>
-                      <div style={{width:38,height:38,borderRadius:11,background:ING_COLORS[i],
+                      cursor:ing.available?"pointer":"not-allowed",opacity:ing.available?1:0.5,
+                      flexDirection:"row"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:14,minWidth:0}}>
+                      <div style={{width:38,height:38,borderRadius:11,background:ing.color??"#c8d8b0",
                         flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                         <div style={{width:14,height:14,borderRadius:"50%",background:"rgba(26,46,26,0.22)"}}/>
                       </div>
-                      <div style={{textAlign:isRTL?"right":"left"}}>
-                        <div style={{fontFamily:ff,fontSize:isMobile?14:15,fontWeight:600,color:"#1a2e1a"}}>{ing.name}</div>
-                        <div style={{fontFamily:ff,fontSize:12,color:"#8a9080",marginTop:2}}>{ing.detail}</div>
+                      <div style={{textAlign:isRTL?"right":"left",minWidth:0}}>
+                        <div style={{fontFamily:ff,fontSize:isMobile?14:15,fontWeight:600,color:"#1a2e1a"}}>{localized(ing,"name",lang)}</div>
+                        <div style={{fontFamily:ff,fontSize:12,color:"#8a9080",marginTop:2}}>
+                          {ing.available?localized(ing,"detail",lang):tt("Sold out for now")}
+                        </div>
                       </div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:10,
-                      flexDirection:isRTL?"row-reverse":"row"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
                       <div style={{textAlign:isRTL?"left":"right"}}>
                         <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,fontWeight:700,color:"#2d4a2d",lineHeight:1}}>
-                          {ING_PRICES[i]} <span style={{fontSize:12,fontWeight:500,color:"#8a9080"}}>{t.currencySymbol}</span>
+                          {formatMoney(ing.portionPriceMillimes,{symbol:""})} <span style={{fontSize:12,fontWeight:500,color:"#8a9080"}}>{t.currencySymbol}</span>
                         </div>
-                        <div style={{fontFamily:ff,fontSize:12,color:"#8a9080",marginTop:2}}>{ING_CALS[i]} kcal</div>
+                        <div style={{fontFamily:ff,fontSize:12,color:"#8a9080",marginTop:2}}>{ing.portionQty} {ing.baseUnit} · {Math.round(portionKcal)} kcal</div>
                       </div>
-                      <motion.div animate={{scale:isSel?1:0.85,opacity:isSel?1:0.4}}
-                        style={{width:30,height:30,borderRadius:"50%",
-                          background:isSel?"#2d4a2d":"rgba(45,74,45,0.15)",
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          color:isSel?"#f0ebe0":"#4a5040",fontSize:16,fontWeight:700,
-                          flexShrink:0,transition:"background 0.2s"}}>
-                        {isSel?"✓":"+"}
-                      </motion.div>
+                      {isSel?(
+                        <div onClick={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",gap:2,background:"#2d4a2d",borderRadius:100,padding:2}}>
+                          <motion.button whileTap={{scale:0.85}} onClick={()=>step(ing,-1)} aria-label="−"
+                            style={{width:32,height:32,borderRadius:"50%",border:"none",background:"transparent",color:"#f0ebe0",fontSize:18,cursor:"pointer"}}>−</motion.button>
+                          <span style={{minWidth:18,textAlign:"center",color:"#f0ebe0",fontFamily:ff,fontSize:13,fontWeight:700}}>{qty}</span>
+                          <motion.button whileTap={{scale:0.85}} onClick={()=>step(ing,1)} disabled={qty>=3} aria-label="+"
+                            style={{width:32,height:32,borderRadius:"50%",border:"none",background:"transparent",color:"#f0ebe0",fontSize:18,cursor:"pointer",opacity:qty>=3?0.4:1}}>+</motion.button>
+                        </div>
+                      ):(
+                        <motion.div animate={{scale:0.85,opacity:0.4}}
+                          style={{width:30,height:30,borderRadius:"50%",background:"rgba(45,74,45,0.15)",
+                            display:"flex",alignItems:"center",justifyContent:"center",color:"#4a5040",fontSize:16,fontWeight:700,flexShrink:0}}>
+                          +
+                        </motion.div>
+                      )}
                     </div>
                   </motion.div>
                 </Reveal>
@@ -790,8 +605,7 @@ function MealBuilder() {
               <div style={{position:"absolute",top:-50,[isRTL?"left":"right"]:-50,width:200,height:200,
                 borderRadius:"50%",background:"radial-gradient(circle,rgba(140,184,140,0.15) 0%,transparent 70%)",
                 pointerEvents:"none"}}/>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:26,
-                flexDirection:isRTL?"row-reverse":"row"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:26,flexDirection:"row"}}>
                 <h3 style={{fontFamily:serif,fontSize:isMobile?26:32,fontWeight:700,color:"#f0ebe0"}}>{t.aiTitle}</h3>
                 <div style={{padding:"5px 13px",borderRadius:100,background:"rgba(140,184,140,0.15)",
                   border:"1px solid rgba(140,184,140,0.3)",fontFamily:ff,fontSize:11,fontWeight:600,
@@ -800,9 +614,9 @@ function MealBuilder() {
                 </div>
               </div>
 
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:18}}>
-                {[[t.macroLabels[0],`${totalCal}`,"kcal"],[t.macroLabels[1],`${totalProt}`,"g"],
-                  [t.macroLabels[2],`${totalCarbs}`,"g"],[t.macroLabels[3],`${totalFat}`,"g"]].map(([label,val,unit])=>(
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:12}}>
+                {[[t.macroLabels[0],formatNutrient(n.kcal,"kcal"),"kcal"],[t.macroLabels[1],formatNutrient(n.protein,"protein"),"g"],
+                  [t.macroLabels[2],formatNutrient(n.carbs,"carbs"),"g"],[t.macroLabels[3],formatNutrient(n.fat,"fat"),"g"]].map(([label,val,unit])=>(
                   <div key={label} style={{background:"rgba(255,255,255,0.05)",borderRadius:16,
                     padding:isMobile?"14px 16px":"18px 20px",border:"1px solid rgba(255,255,255,0.07)",
                     textAlign:isRTL?"right":"left"}}>
@@ -811,7 +625,7 @@ function MealBuilder() {
                       {label}
                     </div>
                     <motion.div key={val} initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}}
-                      transition={{duration:0.3}}
+                      transition={{type:"spring",stiffness:400,damping:25}}
                       style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?34:42,
                         fontWeight:700,color:"#c8d8b0",lineHeight:1}}>
                       {val}<span style={{fontSize:14,color:"#8cb88c"}}>{unit}</span>
@@ -819,51 +633,54 @@ function MealBuilder() {
                   </div>
                 ))}
               </div>
+              <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:18,
+                fontFamily:ff,fontSize:12,color:"rgba(240,235,224,0.6)"}}>
+                <span>{tt("Fiber")} {formatNutrient(n.fiber,"fiber")} g</span>
+                <span>{tt("Sugars")} {formatNutrient(n.sugar,"sugar")} g</span>
+                <span>{tt("Sodium")} {formatNutrient(n.sodium,"sodium")} mg</span>
+                <span>{Math.round(calc.totalWeightG)} g</span>
+              </div>
 
               {/* Total Price */}
               <div style={{background:"rgba(200,216,176,0.12)",borderRadius:16,
                 padding:"16px 20px",border:"1px solid rgba(200,216,176,0.2)",marginBottom:14,
-                display:"flex",justifyContent:"space-between",alignItems:"center",
-                flexDirection:isRTL?"row-reverse":"row"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexDirection:isRTL?"row-reverse":"row"}}>
-                  
-                  <span style={{fontFamily:ff,fontSize:13,fontWeight:600,color:"rgba(240,235,224,0.8)"}}>
-                    {t.totalPriceLabel}
-                  </span>
-                </div>
+                display:"flex",justifyContent:"space-between",alignItems:"center",flexDirection:"row"}}>
+                <span style={{fontFamily:ff,fontSize:13,fontWeight:600,color:"rgba(240,235,224,0.8)"}}>
+                  {t.totalPriceLabel}
+                </span>
                 <motion.div key={totalPrice} initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}}
-                  transition={{duration:0.3}}
+                  transition={{type:"spring",stiffness:400,damping:25}}
                   style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?28:34,
                     fontWeight:700,color:"#c8d8b0",lineHeight:1}}>
-                  {totalPrice.toFixed(1)} <span style={{fontSize:14,color:"#8cb88c"}}>{t.currencySymbol}</span>
+                  {formatMoney(totalPrice,{symbol:""})} <span style={{fontSize:14,color:"#8cb88c"}}>{t.currencySymbol}</span>
                 </motion.div>
               </div>
 
+              {/* Share of a 2,000 kcal reference day (replaces the former invented "energy score") */}
               <div style={{background:"rgba(140,184,140,0.1)",borderRadius:16,padding:"16px 18px",
                 border:"1px solid rgba(140,184,140,0.15)"}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:11,
-                  flexDirection:isRTL?"row-reverse":"row"}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:11,flexDirection:"row"}}>
                   <span style={{fontFamily:ff,fontSize:13,color:"rgba(240,235,224,0.7)"}}>{t.energyScoreLabel}</span>
                   <span style={{fontFamily:ff,fontSize:13,fontWeight:700,color:"#8cb88c"}}>
-                    {Math.min(96,selected.length*16)}%
+                    {Math.round(dailyShare)}%
                   </span>
                 </div>
                 <div style={{height:6,borderRadius:100,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
-                  <motion.div animate={{width:`${Math.min(96,selected.length*16)}%`}} transition={{duration:0.5}}
+                  <motion.div animate={{width:`${dailyShare}%`}} transition={{type:"spring",stiffness:120,damping:20}}
                     style={{height:"100%",background:"linear-gradient(90deg,#8cb88c,#c8d8b0)",borderRadius:100}}/>
                 </div>
               </div>
 
-              {selected.length===0&&(
+              {picks.length===0&&(
                 <p style={{fontFamily:ff,fontSize:13,color:"rgba(240,235,224,0.35)",textAlign:"center",marginTop:14}}>
                   {t.builderEmpty}
                 </p>
               )}
-              <motion.button whileHover={{background:"#c8d8b0"}} whileTap={{scale:0.97}}
-                style={{width:"100%",marginTop:18,padding:"16px",borderRadius:13,border:"none",
+              <motion.button onClick={order} disabled={!picks.length} whileHover={picks.length?{background:"#c8d8b0"}:undefined} whileTap={picks.length?{scale:0.97}:undefined}
+                style={{width:"100%",marginTop:18,padding:"16px",minHeight:52,borderRadius:13,border:"none",
                   background:"#8cb88c",fontFamily:ff,fontSize:15,fontWeight:700,
-                  color:"#1a2e1a",cursor:"pointer",transition:"all 0.2s"}}>
-                {t.builderOrder(selected.length)}
+                  color:"#1a2e1a",cursor:picks.length?"pointer":"not-allowed",opacity:picks.length?1:0.55}}>
+                {t.builderOrder(count)}
               </motion.button>
             </div>
           </div>
@@ -876,25 +693,12 @@ function MealBuilder() {
 /* ══════════════════════════════════════════════════
    CALORIE PLANNER
 ══════════════════════════════════════════════════ */
-const PLANNER_IMAGES=[
-  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1505252585461-04db1eb84625?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1546793665-c74683f339c1?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1540420773420-3366772f4999?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=600&auto=format&fit=crop",
-];
-const PLANNER_NUTRITION=[
-  {cal:410,protein:12,carbs:38,fat:22},{cal:530,protein:42,carbs:31,fat:18},
-  {cal:290,protein:6,carbs:52,fat:8},{cal:520,protein:38,carbs:44,fat:14},
-  {cal:220,protein:8,carbs:34,fat:6},{cal:620,protein:48,carbs:36,fat:26},
-  {cal:460,protein:22,carbs:58,fat:12},{cal:380,protein:14,carbs:28,fat:24},
-];
-
 function CaloriePlanner() {
-  const {t}=useLang();
+  const {t,lang}=useLang();
+  const tt=useT();
+  const cart=useCart();
+  const toast=useToast();
+  const {data:meals}=useCatalogMeals();
   const {isMobile,isTablet}=useBreakpoint();
   const isRTL=t.dir==="rtl";
   const ff=isRTL?"'Noto Sans Arabic',sans-serif":"'DM Sans',sans-serif";
@@ -909,14 +713,21 @@ function CaloriePlanner() {
   const effectiveCal=Math.round(target*t.goals[goalIdx].mult);
   const perMeal=Math.round(effectiveCal/mealsPerDay);
 
+  // Plans from dishes that can actually be ordered now, using their calculated nutrition.
+  const orderable=useMemo(()=>(meals??[]).filter(m=>m.availability==="available"&&m.nutrition),[meals]);
   const generatePlan=()=>{
-    const items=PLANNER_NUTRITION.map((n,i)=>({...n,...t.plannerDishes[i],image:PLANNER_IMAGES[i]}));
+    if(!orderable.length) return;
+    const items=orderable.map(m=>({meal:m,cal:m.nutrition.kcal,protein:m.nutrition.protein,carbs:m.nutrition.carbs,fat:m.nutrition.fat,image:m.imageUrl}));
     const sorted=[...items].sort((a,b)=>Math.abs(a.cal-perMeal)-Math.abs(b.cal-perMeal));
     setPlan(Array.from({length:mealsPerDay},(_,i)=>sorted[i%sorted.length]));
     setGenerated(true);
   };
+  const addToCart=(list)=>{
+    list.forEach(d=>cart.add(mealToCartItem(d.meal),1,{openCart:false}));
+    toast(list.length===1?tt("{name} added to your order",{name:localized(list[0].meal,"name",lang)}):tt("Your plan was added to your order"));
+  };
 
-  const totalPlanned=plan.reduce((s,d)=>s+d.cal,0);
+  const totalPlanned=Math.round(plan.reduce((s,d)=>s+d.cal,0));
   const gap=effectiveCal-totalPlanned;
 
   return (
@@ -963,7 +774,7 @@ function CaloriePlanner() {
                   {t.sliderLabel}
                 </div>
                 <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:16,
-                  justifyContent:isRTL?"flex-end":"flex-start"}}>
+                  justifyContent:"flex-start"}}>
                   <motion.span key={target} initial={{y:-8,opacity:0}} animate={{y:0,opacity:1}}
                     style={{fontFamily:"'Cormorant Garamond',serif",fontSize:isMobile?48:58,
                       fontWeight:700,color:"#c8d8b0",lineHeight:1}}>
@@ -981,7 +792,7 @@ function CaloriePlanner() {
                 <div style={{marginTop:20,background:"rgba(140,184,140,0.08)",borderRadius:14,
                   padding:"14px 16px",border:"1px solid rgba(140,184,140,0.15)"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",
-                    flexDirection:isRTL?"row-reverse":"row"}}>
+                    flexDirection:"row"}}>
                     <div style={{textAlign:isRTL?"right":"left"}}>
                       <div style={{fontFamily:ff,fontSize:11,color:"rgba(240,235,224,0.45)",marginBottom:4}}>
                         {t.adjustedLabel}
@@ -1018,7 +829,7 @@ function CaloriePlanner() {
                         background:goalIdx===i?"rgba(140,184,140,0.12)":"rgba(255,255,255,0.04)",
                         cursor:"pointer",transition:"all 0.2s"}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                        flexDirection:isRTL?"row-reverse":"row"}}>
+                        flexDirection:"row"}}>
                         <span style={{fontFamily:ff,fontSize:14,fontWeight:600,
                           color:goalIdx===i?"#c8d8b0":"rgba(240,235,224,0.55)"}}>{g.label}</span>
                         {goalIdx===i&&<div style={{width:7,height:7,borderRadius:"50%",background:"#8cb88c"}}/>}
@@ -1049,10 +860,10 @@ function CaloriePlanner() {
                     </motion.button>
                   ))}
                 </div>
-                <motion.button onClick={generatePlan}
-                  whileHover={{scale:1.03,background:"#c8d8b0"}} whileTap={{scale:0.97}}
-                  style={{width:"100%",padding:"17px",borderRadius:14,border:"none",background:"#8cb88c",
-                    fontFamily:ff,fontSize:15,fontWeight:700,color:"#1a2e1a",cursor:"pointer",transition:"all 0.2s"}}>
+                <motion.button onClick={generatePlan} disabled={!orderable.length}
+                  whileHover={orderable.length?{scale:1.03,background:"#c8d8b0"}:undefined} whileTap={orderable.length?{scale:0.97}:undefined}
+                  style={{width:"100%",padding:"17px",minHeight:52,borderRadius:14,border:"none",background:"#8cb88c",opacity:orderable.length?1:0.5,
+                    fontFamily:ff,fontSize:15,fontWeight:700,color:"#1a2e1a",cursor:orderable.length?"pointer":"not-allowed"}}>
                   {t.generateBtn}
                 </motion.button>
               </div>
@@ -1068,7 +879,7 @@ function CaloriePlanner() {
 
               <div style={{display:"flex",justifyContent:"space-between",
                 alignItems:isMobile?"flex-start":"flex-end",marginBottom:28,
-                flexDirection:isMobile?"column":isRTL?"row-reverse":"row",gap:isMobile?12:0}}>
+                flexDirection:isMobile?"column":"row",gap:isMobile?12:0}}>
                 <div style={{textAlign:isRTL?"right":"left"}}>
                   <div style={{fontFamily:ff,fontSize:12,color:"#8cb88c",
                     letterSpacing:isRTL?0:"0.14em",textTransform:isRTL?"none":"uppercase",marginBottom:8}}>
@@ -1101,7 +912,7 @@ function CaloriePlanner() {
                     <div style={{position:"relative"}}>
                       <img src={dish.image}
                         style={{width:"100%",height:isMobile?170:195,objectFit:"cover",display:"block"}}
-                        alt={dish.name} onError={e=>{e.target.src=PLANNER_IMAGES[0];}}/>
+                        alt={localized(dish.meal,"name",lang)} onError={e=>{e.target.style.visibility="hidden";}}/>
                       <div style={{position:"absolute",inset:0,
                         background:"linear-gradient(to bottom,transparent 40%,rgba(26,46,26,0.4) 100%)"}}/>
                       <div style={{position:"absolute",top:12,[isRTL?"right":"left"]:12,
@@ -1112,15 +923,15 @@ function CaloriePlanner() {
                       <div style={{position:"absolute",top:12,[isRTL?"left":"right"]:12,
                         padding:"5px 11px",borderRadius:100,background:"rgba(26,46,26,0.72)",
                         fontFamily:ff,fontSize:11,fontWeight:600,color:"#c8d8b0"}}>
-                        {dish.tag}
+                        {localized(dish.meal,"tag",lang)}
                       </div>
                     </div>
                     <div style={{padding:isMobile?"16px 18px":"20px 22px",direction:t.dir}}>
                       <h4 style={{fontFamily:serif,fontSize:isMobile?22:26,fontWeight:700,color:"#1a2e1a",
-                        marginBottom:12,lineHeight:1.2,textAlign:isRTL?"right":"left"}}>{dish.name}</h4>
+                        marginBottom:12,lineHeight:1.2,textAlign:isRTL?"right":"left"}}>{localized(dish.meal,"name",lang)}</h4>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:14}}>
-                        {[["Calories",`${dish.cal} kcal`],["Protein",`${dish.protein}g`],
-                          ["Carbs",`${dish.carbs}g`],["Fat",`${dish.fat}g`]].map(([k,v])=>(
+                        {[[t.macroLabels[0],`${Math.round(dish.cal)} kcal`],[t.macroLabels[1],`${Math.round(dish.protein)}g`],
+                          [t.macroLabels[2],`${Math.round(dish.carbs)}g`],[t.macroLabels[3],`${Math.round(dish.fat)}g`]].map(([k,v])=>(
                           <div key={k} style={{background:"rgba(245,240,232,0.85)",borderRadius:9,
                             padding:"9px 11px",textAlign:isRTL?"right":"left"}}>
                             <div style={{fontFamily:ff,fontSize:10,color:"#8a9080",
@@ -1130,11 +941,10 @@ function CaloriePlanner() {
                           </div>
                         ))}
                       </div>
-                      <motion.button whileHover={{background:"#2d4a2d"}} whileTap={{scale:0.97}}
-                        style={{width:"100%",padding:"12px",borderRadius:11,border:"none",background:"#1a2e1a",
-                          fontFamily:ff,fontSize:13,fontWeight:600,color:"#f0ebe0",cursor:"pointer",
-                          transition:"background 0.2s"}}>
-                        {t.addOrder}
+                      <motion.button onClick={()=>addToCart([dish])} whileHover={{background:"#2d4a2d"}} whileTap={{scale:0.97}}
+                        style={{width:"100%",padding:"12px",minHeight:44,borderRadius:11,border:"none",background:"#1a2e1a",
+                          fontFamily:ff,fontSize:13,fontWeight:600,color:"#f0ebe0",cursor:"pointer"}}>
+                        {t.addOrder} · {formatMoney(dish.meal.priceMillimes)}
                       </motion.button>
                     </div>
                   </motion.div>
@@ -1145,20 +955,20 @@ function CaloriePlanner() {
                 style={{background:"linear-gradient(135deg,#1a2e1a 0%,#2d4a2d 100%)",borderRadius:20,
                   padding:isMobile?"22px 20px":"26px 38px",display:"flex",justifyContent:"space-between",
                   alignItems:"center",
-                  flexDirection:isMobile?"column":isRTL?"row-reverse":"row",gap:isMobile?18:0}}>
+                  flexDirection:isMobile?"column":"row",gap:isMobile?18:0}}>
                 <div style={{textAlign:isRTL?"right":"left"}}>
                   <div style={{fontFamily:ff,fontSize:11,color:"rgba(200,216,176,0.55)",
                     letterSpacing:isRTL?0:"0.1em",textTransform:isRTL?"none":"uppercase",marginBottom:6}}>
                     {t.macrosLabel}
                   </div>
                   <div style={{fontFamily:serif,fontSize:isMobile?18:26,fontWeight:700,color:"#c8d8b0"}}>
-                    {plan.reduce((s,d)=>s+d.protein,0)}g {t.macroUnits[0]} · {plan.reduce((s,d)=>s+d.carbs,0)}g {t.macroUnits[1]} · {plan.reduce((s,d)=>s+d.fat,0)}g {t.macroUnits[2]}
+                    {Math.round(plan.reduce((s,d)=>s+d.protein,0))}g {t.macroUnits[0]} · {Math.round(plan.reduce((s,d)=>s+d.carbs,0))}g {t.macroUnits[1]} · {Math.round(plan.reduce((s,d)=>s+d.fat,0))}g {t.macroUnits[2]}
                   </div>
                 </div>
-                <motion.button whileHover={{scale:1.04,background:"#c8d8b0"}} whileTap={{scale:0.97}}
-                  style={{padding:isMobile?"14px 26px":"17px 34px",borderRadius:100,border:"none",
+                <motion.button onClick={()=>{addToCart(plan);cart.setOpen(true);}} whileHover={{scale:1.04,background:"#c8d8b0"}} whileTap={{scale:0.97}}
+                  style={{padding:isMobile?"14px 26px":"17px 34px",minHeight:48,borderRadius:100,border:"none",
                     background:"#8cb88c",fontFamily:ff,fontSize:14,fontWeight:700,color:"#1a2e1a",
-                    cursor:"pointer",transition:"all 0.2s",whiteSpace:"nowrap",
+                    cursor:"pointer",whiteSpace:"nowrap",
                     width:isMobile?"100%":"auto"}}>
                   {t.orderFull}
                 </motion.button>
@@ -1200,57 +1010,9 @@ function AuthSection() {
           </div>
         </Reveal>
 
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:22}}>
-          <Reveal delay={0.1}>
-            <div style={{borderRadius:26,background:"#f0ebe0",padding:isMobile?26:42,
-              border:"1px solid rgba(140,184,140,0.2)",boxShadow:"0 8px 40px rgba(26,46,26,0.06)"}}>
-              <h3 style={{fontFamily:serif,fontSize:isMobile?30:38,fontWeight:700,color:"#1a2e1a",
-                marginBottom:26,textAlign:isRTL?"right":"left"}}>{t.loginTitle}</h3>
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {[[t.emailPh,"text"],[t.passwordPh,"password"]].map(([ph,type])=>(
-                  <input key={ph} placeholder={ph} type={type}
-                    style={{padding:"15px 18px",borderRadius:12,border:"1px solid rgba(140,184,140,0.25)",
-                      background:"rgba(245,240,232,0.7)",fontFamily:ff,fontSize:15,color:"#1a2e1a",
-                      outline:"none",width:"100%",textAlign:isRTL?"right":"left",direction:t.dir}}
-                    onFocus={e=>e.target.style.borderColor="rgba(45,74,45,0.5)"}
-                    onBlur={e=>e.target.style.borderColor="rgba(140,184,140,0.25)"}/>
-                ))}
-                <motion.button whileHover={{scale:1.02,background:"#2d4a2d"}} whileTap={{scale:0.98}}
-                  style={{padding:"16px",borderRadius:12,border:"none",background:"#1a2e1a",
-                    fontFamily:ff,fontSize:15,fontWeight:700,color:"#f0ebe0",
-                    cursor:"pointer",transition:"background 0.2s",marginTop:4}}>
-                  {t.loginBtn}
-                </motion.button>
-              </div>
-            </div>
-          </Reveal>
-
-          <Reveal delay={isMobile?0:0.15}>
-            <div style={{borderRadius:26,background:"#1a2e1a",padding:isMobile?26:42,
-              boxShadow:"0 8px 40px rgba(26,46,26,0.15)",position:"relative",overflow:"hidden"}}>
-              <div style={{position:"absolute",bottom:-36,[isRTL?"left":"right"]:-36,width:180,height:180,
-                borderRadius:"50%",background:"radial-gradient(circle,rgba(140,184,140,0.12) 0%,transparent 70%)"}}/>
-              <h3 style={{fontFamily:serif,fontSize:isMobile?30:38,fontWeight:700,color:"#f0ebe0",
-                marginBottom:26,textAlign:isRTL?"right":"left"}}>{t.signupTitle}</h3>
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {[[t.fullNamePh,"text"],[t.emailPh,"text"],[t.passwordPh,"password"]].map(([ph,type])=>(
-                  <input key={ph} placeholder={ph} type={type}
-                    style={{padding:"15px 18px",borderRadius:12,border:"1px solid rgba(140,184,140,0.2)",
-                      background:"rgba(255,255,255,0.06)",fontFamily:ff,fontSize:15,color:"#f0ebe0",
-                      outline:"none",width:"100%",textAlign:isRTL?"right":"left",direction:t.dir}}
-                    onFocus={e=>e.target.style.borderColor="rgba(140,184,140,0.5)"}
-                    onBlur={e=>e.target.style.borderColor="rgba(140,184,140,0.2)"}/>
-                ))}
-                <motion.button whileHover={{scale:1.02,background:"#c8d8b0"}} whileTap={{scale:0.98}}
-                  style={{padding:"16px",borderRadius:12,border:"none",background:"#8cb88c",
-                    fontFamily:ff,fontSize:15,fontWeight:700,color:"#1a2e1a",
-                    cursor:"pointer",transition:"background 0.2s",marginTop:4}}>
-                  {t.signupBtn}
-                </motion.button>
-              </div>
-            </div>
-          </Reveal>
-        </div>
+        <Reveal delay={0.1}>
+          <AuthForms/>
+        </Reveal>
       </div>
     </section>
   );
@@ -1259,7 +1021,7 @@ function AuthSection() {
 /* ══════════════════════════════════════════════════
    FOOTER
 ══════════════════════════════════════════════════ */
-function Footer() {
+export function Footer() {
   const {t}=useLang();
   const {isMobile}=useBreakpoint();
   const isRTL=t.dir==="rtl";
@@ -1270,7 +1032,7 @@ function Footer() {
       borderTop:"1px solid rgba(140,184,140,0.1)",direction:t.dir}}>
       <div style={{maxWidth:1200,margin:"0 auto",display:"flex",justifyContent:"space-between",
         alignItems:isMobile?"flex-start":"center",
-        flexDirection:isMobile?"column":isRTL?"row-reverse":"row",gap:isMobile?24:0}}>
+        flexDirection:isMobile?"column":"row",gap:isMobile?24:0}}>
         <div>
           <img src="/logo-footer2.png" alt="Healthy Kitchen"
             style={{height:isMobile?38:48,width:"auto",objectFit:"contain",display:"block"}}/>
@@ -1293,34 +1055,23 @@ function Footer() {
 }
 
 /* ══════════════════════════════════════════════════
-   APP ROOT
+   HOME PAGE (nav, footer and grain come from CustomerLayout)
 ══════════════════════════════════════════════════ */
 export default function HealthyKitchenApp() {
-  const [lang,setLang]=useState("fr");
-  const t=TRANSLATIONS[lang];
-
+  const {user}=useAuth();
   return (
-    <LangCtx.Provider value={{lang,t,setLang}}>
+    <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        ::selection{background:rgba(140,184,140,0.25);}
         input::placeholder{color:rgba(74,80,64,0.45);}
         input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:100px;background:rgba(140,184,140,0.25);outline:none;width:100%;}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#8cb88c;cursor:pointer;border:3px solid #1a2e1a;box-shadow:0 2px 8px rgba(26,46,26,0.35);}
         input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#8cb88c;cursor:pointer;border:3px solid #1a2e1a;}
-        @media(max-width:639px){html{-webkit-text-size-adjust:100%;}}
       `}</style>
-      <Grain/>
-      <div style={{fontFamily:"'DM Sans',sans-serif",background:"#f5f0e8",overflowX:"hidden",direction:t.dir}}>
-        <Nav/>
-        <Hero/>
-        <MenuSection/>
-        <MealBuilder/>
-        <CaloriePlanner/>
-        <AuthSection/>
-        <Footer/>
-      </div>
-    </LangCtx.Provider>
+      <Hero/>
+      <MenuSection/>
+      <MealBuilder/>
+      <CaloriePlanner/>
+      {!user&&<AuthSection/>}
+    </>
   );
 }

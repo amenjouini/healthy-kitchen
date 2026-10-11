@@ -1,0 +1,49 @@
+# Render Blueprint — Healthy Kitchen
+# One web service serves the built React site AND the /api (same origin → no CORS needed).
+# Data (SQLite database + uploaded images/receipts) lives on a persistent disk mounted at /var/data.
+# Persistent disks require a paid instance type (Starter or above); the free plan wipes the filesystem.
+services:
+  - type: web
+    name: healthy-kitchen
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: main
+    # devDependencies (Vite, Tailwind) are needed to build even though NODE_ENV=production.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: healthy-kitchen-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/healthy-kitchen.db
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SEED_CATALOG_ON_START
+        value: "1"
+      - key: BUSINESS_UTC_OFFSET_MINUTES
+        value: "60"
+      - key: SESSION_DAYS
+        value: "14"
+      # Filled in the Render dashboard (never committed):
+      - key: PUBLIC_ORIGIN
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      # WhatsApp stays disabled: leave empty.
+      - key: WHATSAPP_PROVIDER
+        value: ""

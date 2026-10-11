@@ -1,29 +1,50 @@
 @import "tailwindcss";
 
+/* Healthy Kitchen brand tokens (from the existing site) → Tailwind utilities like bg-forest, text-sage, font-serif */
+@theme {
+  --color-forest: #1a2e1a;
+  --color-moss: #2d4a2d;
+  --color-sage: #8cb88c;
+  --color-mint: #c8d8b0;
+  --color-cream: #f5f0e8;
+  --color-linen: #f0ebe0;
+  --color-sand: #eae8e0;
+  --color-olive: #4a5040;
+  --color-muted: #6a7060;
+  --color-stone: #8a9080;
+  --color-clay: #a05040;
+  --color-amber: #b7791f;
+
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-arabic: "Noto Sans Arabic", "DM Sans", sans-serif;
+}
+
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #050505;
-  color: white;
+  background: var(--color-cream);
+  color: var(--color-forest);
   overflow-x: hidden;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
+
+[dir="rtl"] body, [dir="rtl"] { font-family: var(--font-arabic); }
 
 ::selection {
-  background: #101A12;
-  color: black;
+  background: rgba(140, 184, 140, 0.3);
+  color: var(--color-forest);
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(0,255,136,0.08), transparent 30%),
-    radial-gradient(circle at 80% 30%, rgba(0,200,100,0.08), transparent 35%),
-    radial-gradient(circle at 50% 80%, rgba(0,255,136,0.05), transparent 40%);
-  pointer-events: none;
-  z-index: -1;
+/* Visible keyboard focus everywhere (accessibility) */
+:focus-visible {
+  outline: 2px solid var(--color-sage);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
