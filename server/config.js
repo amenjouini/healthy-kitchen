@@ -32,7 +32,8 @@ export function loadConfig(overrides = {}) {
     publicOrigin: process.env.PUBLIC_ORIGIN || '',
     sessionDays: int('SESSION_DAYS', 14),
     /** Set to 1 behind a reverse proxy (nginx, Caddy…) so rate limits use the client IP from X-Forwarded-For. */
-    trustProxy: process.env.TRUST_PROXY === '1',
+    // Render always sits behind its proxy (it sets RENDER=true), so trust it there automatically.
+    trustProxy: process.env.TRUST_PROXY === '1' || process.env.RENDER === 'true',
     /** Seed the base catalogue on start when the database has no meals yet (idempotent). */
     seedOnStart: process.env.SEED_CATALOG_ON_START === '1',
     /** Business timezone offset in minutes (Tunisia = UTC+1, no DST). Used for "today" and hour-of-day analytics. */

@@ -105,7 +105,8 @@ export function createApp(config, { db: existingDb } = {}) {
       return serveFile(res, path.join(config.distDir, 'index.html'));
     }
 
-    const forwarded = config.trustProxy ? String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim() : '';
+    // The proxy APPENDS the real client IP; the left-most entries can be forged by the client.
+    const forwarded = config.trustProxy ? String(req.headers['x-forwarded-for'] ?? '').split(',').map((x) => x.trim()).filter(Boolean).at(-1) ?? '' : '';
     const ip = forwarded || req.socket.remoteAddress || null;
     try {
       const match = router.match(req.method, pathname);

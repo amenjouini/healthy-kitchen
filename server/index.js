@@ -21,9 +21,24 @@ if (config.isProduction && !fs.existsSync(config.distDir)) console.warn('[server
 if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
   const exists = app.db.get(`SELECT 1 FROM users u JOIN roles r ON r.id = u.role_id WHERE u.email = ? AND r.key = 'super_admin'`, process.env.ADMIN_EMAIL);
   if (!exists) {
-    await upsertUserWithRole(app.db, { email: process.env.ADMIN_EMAIL.toLowerCase(), name: process.env.ADMIN_NAME || 'Admin', password: process.env.ADMIN_PASSWORD, roleKey: 'super_admin' });
-    console.log(`[bootstrap] Super admin ${process.env.ADMIN_EMAIL} created`);
+    try {
+      await upsertUserWithRole(app.db, { email: process.env.ADMIN_EMAIL.toLowerCase(), name: process.env.ADMIN_NAME || 'Admin', password: process.env.ADMIN_PASSWORD, roleKey: 'super_admin' });
+      console.log(`[bootstrap] Super admin ${process.env.ADMIN_EMAIL} created`);
+    } catch (err) {
+      console.error(`[bootstrap] Could not create the admin account: ${err.message}`);
+    }
   }
+}
+
+// Startup diagnostics (no secrets): which database file is used and whether anyone can log in.
+const userCount = app.db.get('SELECT COUNT(*) AS n FROM users').n;
+const staffCount = app.db.get('SELECT COUNT(*) AS n FROM users u JOIN roles r ON r.id = u.role_id WHERE r.is_staff = 1 AND u.is_active = 1').n;
+console.log(`[db] ${config.dbPath} · ${userCount} account(s), ${staffCount} active staff/admin`);
+if (config.isProduction && staffCount === 0) {
+  console.warn('[db] No admin account exists. Set ADMIN_EMAIL and ADMIN_PASSWORD (8+ chars) and restart to create one.');
+}
+if (process.env.RENDER === 'true' && !config.dbPath.startsWith('/var/data')) {
+  console.warn('[db] Database is on the ephemeral Render filesystem: it is reset on every deploy, restart and free-plan spin-down.');
 }
 
 // Retry queued WhatsApp messages periodically — only when WhatsApp is configured (it is optional).
