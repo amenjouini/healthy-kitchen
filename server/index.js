@@ -5,7 +5,7 @@ import { createApp } from './app.js';
 import { upsertUserWithRole } from './services/users.js';
 import { notifyLateOrders } from './services/notifications.js';
 import { isOrderLate } from '../shared/orderStatus.js';
-import { seedCatalog } from './db/seed.js';
+import { seedCatalog, seedDemo } from './db/seed.js';
 import fs from 'node:fs';
 
 const config = loadConfig();
@@ -14,6 +14,19 @@ const app = createApp(config);
 if (config.seedOnStart) {
   const r = seedCatalog(app.db);
   if (!r.skipped) console.log(`[bootstrap] Catalogue seeded (${r.meals} meals, ${r.ingredients} ingredients)`);
+}
+
+// DEMO ONLY: fill an EMPTY database with the demo accounts, stock and ~60 days of synthetic orders
+// (same generator as `npm run db:seed:demo`). Never touches a database that already has orders.
+// Meant for throw-away demo instances (e.g. Render free plan, where the disk is reset on restart).
+if (process.env.SEED_DEMO_ON_START === '1') {
+  const orders = app.db.get('SELECT COUNT(*) AS n FROM orders').n;
+  if (orders === 0) {
+    const r = await seedDemo(app.db, { password: process.env.DEMO_PASSWORD || 'demo-password' });
+    if (!r.skipped) console.log(`[bootstrap] DEMO data seeded: ${r.orders} orders, accounts ${r.accounts.join(', ')}`);
+  } else {
+    console.log(`[bootstrap] SEED_DEMO_ON_START ignored: database already has ${orders} orders`);
+  }
 }
 if (config.isProduction && !fs.existsSync(config.distDir)) console.warn('[server] dist/ not found — run "npm run build" before "npm start"');
 
