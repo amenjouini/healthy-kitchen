@@ -19,7 +19,7 @@ npm run db:seed:demo            # OPTIONAL dev data: staff accounts, stock, zone
 npm run dev:all                 # API on :8787 + Vite on :5173 (proxying /api and /uploads)
 ```
 
-Demo accounts (only after `db:seed:demo`, password `demo-password`):
+Demo accounts (only after `db:seed:demo`, password `DEMO_PASSWORD`):
 `admin@demo.local` (super admin), `manager@demo.local`, `staff@demo.local`, `customer@demo.local`.
 
 Create a real first admin instead with
